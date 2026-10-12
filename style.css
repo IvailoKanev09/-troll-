@@ -1,0 +1,43 @@
+:root{--ink:#1b1b5e;--red:#e63946;--paper:#fffdf0;--grid:#cfe0ff;--yellow:#ffe66d}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;font-family:'Comic Sans MS','Segoe Print','Chalkboard SE',cursive;color:var(--ink);
+  background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/100% 28px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 100%,var(--paper)}
+body::before{content:'';position:fixed;left:44px;top:0;bottom:0;width:2px;background:var(--red);opacity:.7}
+header,main,footer{width:min(740px,100%);margin:0 auto;padding:14px 16px 14px 66px}
+main{flex:1}
+h1{margin:0 0 8px;font-size:2.2rem;line-height:1.1;transform:rotate(-1.5deg);text-decoration:underline wavy var(--red) 3px;text-underline-offset:6px}
+h1 small{display:block;font-size:1rem;font-weight:400;text-decoration:none;margin-top:6px}
+.rage{height:16px;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:#fff}
+#rageBar{height:100%;width:0;background:linear-gradient(90deg,#3ddc84,var(--yellow),var(--red));background-size:740px 100%;transition:width .4s}
+#prof{display:flex;gap:14px;align-items:flex-start;margin:6px 0 18px}
+.avatar{font-size:3.4rem;line-height:1}
+#bubble{position:relative;flex:1;margin:0;padding:12px 14px;background:#fff;border:3px solid var(--ink);border-radius:16px;font-size:1.05rem}
+#bubble::before{content:'';position:absolute;left:-14px;top:18px;border:8px solid transparent;border-right:12px solid var(--ink)}
+.panel{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:16px;box-shadow:6px 6px 0 var(--ink)}
+.top{display:flex;justify-content:space-between;font-size:.95rem}
+#timer.low{color:var(--red);font-weight:700}
+h2{margin:10px 0 14px;font-size:1.3rem;line-height:1.3}
+#answers,#capBox{display:grid;gap:10px}
+#free{display:flex;gap:10px;flex-wrap:wrap}
+input{flex:1;min-width:180px;font:inherit;padding:10px;border:3px solid var(--ink);border-radius:10px}
+button{font:inherit;cursor:pointer;color:var(--ink);background:var(--yellow);border:3px solid var(--ink);border-radius:10px;padding:10px 14px;box-shadow:3px 3px 0 var(--ink);text-align:left}
+button:hover:not(:disabled){transform:translate(-1px,-1px)}
+button:active:not(:disabled){transform:translate(2px,2px);box-shadow:none}
+button:disabled{opacity:.6;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:4px solid var(--red);outline-offset:2px}
+button.ok{background:#8be28b}
+button.no{background:#ff9aa2}
+#giveUp{display:block;margin-top:16px;background:var(--red);color:#fff;animation:pulse 1s infinite}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{font-size:2.4rem;text-align:center;padding:8px}
+.tile.sel{outline:4px solid var(--red)}
+footer{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:.85rem}
+footer button{font-size:.85rem;padding:6px 10px}
+.shake{animation:shake .4s}
+body.angry h1{animation:jit .35s infinite}
+@keyframes shake{25%{transform:translateX(-7px) rotate(-6deg)}75%{transform:translateX(7px) rotate(6deg)}}
+@keyframes jit{50%{transform:rotate(-1.5deg) translate(2px,-1px)}}
+@keyframes pulse{50%{transform:scale(1.04)}}
+@media(max-width:600px){body::before{left:12px}header,main,footer{padding-left:28px}h1{font-size:1.8rem}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

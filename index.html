@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Успех на НВО</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>НВОУ-Трол <small>„Учи се, ама друг път“</small></h1>
+      <div class="rage" title="Нерв-метър"><div id="rageBar"></div></div>
+    </header>
+
+    <main>
+      <section id="prof">
+        <div class="avatar" id="avatar" aria-hidden="true">🧐</div>
+        <p id="bubble" aria-live="polite"></p>
+      </section>
+
+      <section id="card" class="panel">
+        <div class="top">
+          <span id="counter"></span><span id="timer"></span>
+        </div>
+        <h2 id="question"></h2>
+        <div id="answers"></div>
+        <div id="free" hidden>
+          <input
+            id="freeInput"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Напиши отговора си…"
+          />
+          <button id="freeBtn">Провери</button>
+        </div>
+        <button id="giveUp" hidden>Признавам си, че не знам</button>
+      </section>
+
+      <section id="captcha" class="panel" hidden>
+        <h2>Докажи, че не си робот</h2>
+        <p id="capQ"></p>
+        <div id="capBox"></div>
+      </section>
+
+      <section id="result" class="panel" hidden>
+        <h2>Резултат: <span id="score"></span></h2>
+        <p id="verdict"></p>
+        <button id="again">Опитай пак (ама защо?)</button>
+      </section>
+    </main>
+
+    <footer>
+      <button id="mute">🔇 Спри звука</button>
+      <span>Пародия за смях. Не се ядосвай — учи се 😉</span>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
