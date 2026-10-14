@@ -8,7 +8,7 @@
   </head>
   <body>
     <header>
-      <h1>НВОУ-Трол <small>„Учи се, ама друг път“</small></h1>
+      <h1>НВО <small>„Учи се, ама друг път“</small></h1>
       <div class="rage" title="Нерв-метър"><div id="rageBar"></div></div>
     </header>
 
@@ -33,7 +33,6 @@
           />
           <button id="freeBtn">Провери</button>
         </div>
-        <button id="giveUp" hidden>Признавам си, че не знам</button>
       </section>
 
       <section id="captcha" class="panel" hidden>
@@ -53,6 +52,20 @@
       <button id="mute">🔇 Спри звука</button>
       <span>Пародия за смях. Не се ядосвай — учи се 😉</span>
     </footer>
+    <div id="musicBox" class="musicbox" hidden>
+      <div class="mp">
+        <div class="mp-disc" aria-hidden="true">💿</div>
+        <div class="mp-info" aria-hidden="true">
+          <div class="mp-title">♪ ЧАЛГА · NEW HIT</div>
+          <div class="mp-eq"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="mp-bar"><b id="mpFill"></b></div>
+        </div>
+      </div>
+      <p id="mbNote">🎵 Чалга! Натисни ме, за да спра</p>
+      <button id="mbHit" class="mbhit" aria-label="Натисни плейъра, за да спре музиката"></button>
+    </div>
+    <audio id="chalga" src="chalga.mp3" preload="auto" loop></audio>
+    <script src="db.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
