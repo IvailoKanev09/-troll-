@@ -161,7 +161,7 @@ function dodge() {
   lastDodge = performance.now(); dodges++;
   placeX(true);
   if (lastDodge - lastTaunt > 3500 && Math.random() < .5) { lastTaunt = lastDodge; say(pick(TAUNTS)); }
-  bump(1.1);
+  bump(1.6);
 }
 function hop() {
   if (st === 'ok') placeX(true); else placeX(false);
