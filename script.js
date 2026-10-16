@@ -43,6 +43,15 @@ let DB, Q, subj, mod, i, score, rage, tl, tid, ft, hadRight, typos, muted = fals
 let want = false, st = 'ok', tapped = false, unlocked = false, priming = false, chk, cht, chaseCb;
 let inQuiz = false;
 let fsWarnings = 0;
+let tt = 60; // пълното време на текущата задача (за Panic-mode)
+// Забавените извиквания се помнят, за да могат да се отменят при край на НВО (иначе „изпускат“ след резултата).
+const pend = new Set();
+const later = (fn, ms) => { const id = setTimeout(() => { pend.delete(id); fn(); }, ms); pend.add(id); return id; };
+function stopAll() {
+  clearInterval(tid); clearTimeout(ft);
+  pend.forEach(clearTimeout); pend.clear();
+  chaseCb = null; endChase(); panicStop();
+}
 
 // ---------- Чичко Професор ----------
 function say(t) {
@@ -65,7 +74,7 @@ function bump(n) {
       'Сърцето ми се къса да те гледам как се мъчиш с тоя плейър. Поемаме си въздух, нулираме бара и пробваш пак!',
       'Жалко ми е за теб, наистина! Оставям те на мира с музиката – ето ти въпроса наново, дано този път имаш повече късмет.'
     ]));
-    setTimeout(showQ, 4500);
+    later(showQ, 4500);
   }
 }
 function panel(id) { ['card', 'captcha', 'result'].forEach(p => $(p).hidden = p !== id); }
@@ -199,7 +208,7 @@ $('mbHit').onclick = () => {
   const cb = chaseCb; chaseCb = null;
   endChase();
   say('Хванат! Музиката спря. Ако знаеше и отговора, щеше да е още по-хубаво.');
-  if (cb) setTimeout(cb, 1200);
+  if (cb) later(cb, 1200);
 };
 
 // Защити срещу излизане от фокус, табове и клавишни комбинации по време на теста
@@ -283,7 +292,7 @@ async function loadDb() {
 }
 function intro() {
   inQuiz = false; fsWarnings = 0;
-  clearInterval(tid); clearTimeout(ft); chaseCb = null; endChase();
+  stopAll();
   i = 0; score = 0; rage = 0; bump(0); panel('card');
   $('counter').textContent = ''; $('timer').textContent = '';
   $('free').hidden = true;
@@ -326,6 +335,89 @@ function begin(m) {
   });
 }
 
+// ---------- Panic-mode: последните 20% от времето на всяка задача ----------
+// Червен прилив + пулсиране в такт със сърдечен ритъм и тревожен дрон; колкото е по-близо краят, толкова по-бързо и по-силно.
+const PANIC_AT = 0.2;
+const PANIC_SAY = [
+  'Последните 20% от времето! Чуваш ли как сърцето ти бие? И то се притеснява заради оценката ти.',
+  'Червено е, защото кръвното ти скочи. Бързай, времето изтича!',
+  'ПАНИКА! Още малко и пак ще налучкваш.'
+];
+let panicOn = false, panicLvl = 0, panicCtx = null, panicOut = null, panicNodes = [], panicT = 0, panicFx = null;
+
+function panicThump(t, vol) {
+  const o = panicCtx.createOscillator(), g = panicCtx.createGain();
+  o.type = 'triangle';
+  o.frequency.setValueAtTime(120, t);
+  o.frequency.exponentialRampToValueAtTime(42, t + 0.16);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+  o.connect(g); g.connect(panicOut);
+  o.start(t); o.stop(t + 0.25);
+}
+function panicBeat() {
+  if (!panicOn) return;
+  if (panicFx) { panicFx.classList.remove('beat'); void panicFx.offsetWidth; panicFx.classList.add('beat'); }
+  if (panicCtx && panicOut) {
+    const t = panicCtx.currentTime + 0.02;
+    panicThump(t, 1); panicThump(t + 0.17, 0.65); // „туп-туп“
+  }
+  panicT = setTimeout(panicBeat, 950 - 450 * panicLvl); // ~0,95 с → ~0,5 с между ударите
+}
+function panicStart() {
+  panicOn = true; panicLvl = 0;
+  document.body.classList.add('panic');
+  if (!panicFx) {
+    panicFx = document.createElement('div');
+    panicFx.id = 'panicFx'; panicFx.setAttribute('aria-hidden', 'true');
+    document.body.append(panicFx);
+  }
+  if (AC) try {
+    if (!panicCtx) panicCtx = new AC();
+    const r = panicCtx.resume(); if (r && r.catch) r.catch(() => {});
+    const t = panicCtx.currentTime;
+    panicOut = panicCtx.createGain();
+    panicOut.gain.value = 0.0001; // плавно се усилва от panicSet
+    panicOut.connect(panicCtx.destination);
+    // тревожен дрон: тритон от трионни осцилатори през нискочестотен филтър + пулсиращо тремоло
+    const lp = panicCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380; lp.Q.value = 5;
+    const dg = panicCtx.createGain(); dg.gain.value = 0.1;
+    lp.connect(dg); dg.connect(panicOut);
+    const lfo = panicCtx.createOscillator(), lg = panicCtx.createGain();
+    lfo.frequency.value = 5; lg.gain.value = 0.07; lfo._b = 5;
+    lfo.connect(lg); lg.connect(dg.gain); lfo.start(t);
+    panicNodes = [lfo];
+    [55, 77.8, 110.5].forEach(f => {
+      const o = panicCtx.createOscillator();
+      o.type = 'sawtooth'; o.frequency.value = f; o._b = f;
+      o.connect(lp); o.start(t); panicNodes.push(o);
+    });
+  } catch (e) { panicOut = null; panicNodes = []; }
+  panicBeat();
+}
+function panicSet(l) {
+  panicLvl = l;
+  document.body.style.setProperty('--pi', l.toFixed(3));
+  if (panicCtx && panicOut) {
+    const now = panicCtx.currentTime;
+    panicOut.gain.setTargetAtTime(0.3 + 0.28 * l, now, 0.3); // леко по-шумно с всяка секунда
+    panicNodes.forEach(o => o.frequency.setTargetAtTime(o._b * (1 + 0.3 * l), now, 0.4)); // и по-напрегнато
+  }
+}
+function panicStop() {
+  if (!panicOn) return;
+  panicOn = false; clearTimeout(panicT);
+  document.body.classList.remove('panic'); document.body.style.removeProperty('--pi');
+  if (panicFx) panicFx.classList.remove('beat');
+  if (panicCtx && panicOut) {
+    const out = panicOut, nodes = panicNodes;
+    panicOut = null; panicNodes = [];
+    out.gain.setTargetAtTime(0, panicCtx.currentTime, 0.05);
+    setTimeout(() => { nodes.forEach(o => { try { o.stop(); } catch (e) {} }); try { out.disconnect(); } catch (e) {} }, 500);
+  }
+}
+
 // ---------- Поток на играта ----------
 function showQ() {
   const q = Q[i];
@@ -338,7 +430,15 @@ function showQ() {
   if (q.type === 'closed') {
     const opts = [];
     shuffle(q.a.map((t, k) => [t, k === 0])).forEach(([t, ok]) => {
-      const b = btn(t, () => { b.classList.add(ok ? 'ok' : 'no'); finish(ok); });
+      const b = btn(t, () => {
+        b.classList.add(ok ? 'ok' : 'no');
+        if (!ok) {
+          opts.forEach(([otherBtn, isOk]) => {
+            if (isOk) otherBtn.classList.add('ok');
+          });
+        }
+        finish(ok);
+      });
       opts.push([b, ok]);
       $('answers').append(b);
     });
@@ -346,16 +446,21 @@ function showQ() {
     $('answers').append(btn('🎰 Играй на ТОТО', () => {
       const [b, ok] = pick(opts);
       b.classList.add(ok ? 'ok' : 'no');
+      if (!ok) {
+        opts.forEach(([otherBtn, isOk]) => {
+          if (isOk) otherBtn.classList.add('ok');
+        });
+      }
       finish(ok, ok ? 'ТОТО печели! Късметлия. Утре играй и на лотарията.' : 'ТОТО не ти провървя. Късметът не пише НВО вместо теб.');
     }));
   }
   lock(false);
-  say(pick(['Давай, давай. Часовникът тиктака.', 'Лесна е. Ама за те бо – не знам.', 'Ако не знаеш, познавай. Така или иначе ще ти се подиграя.']));
+  say(pick(['Давай, давай. Часовникът тиктака.', 'Лесна е. Ама за тебе – не знам.', 'Ако не знаеш, познавай. Така или иначе ще ти се подиграя.']));
   countdown(q.time);
 }
 
 function countdown(sec) {
-  clearInterval(tid); tl = sec; tick();
+  clearInterval(tid); panicStop(); tt = sec; tl = sec; tick();
   tid = setInterval(() => {
     tl--; tick();
     if (tl <= 0) { clearInterval(tid); finish(false, 'Времето изтече! Малко музика да ти раздвижи мозъка.'); }
@@ -365,16 +470,22 @@ function tick() {
   const m = Math.floor(tl / 60), s = String(tl % 60).padStart(2, '0');
   $('timer').textContent = `⏱ ${m}:${s}`;
   $('timer').className = tl <= 10 ? 'low' : '';
+  // Panic-mode: последните 20% от времето на задачата
+  const span = tt * PANIC_AT;
+  if (tl > 0 && tl <= span) {
+    if (!panicOn) { panicStart(); say(pick(PANIC_SAY)); }
+    panicSet(Math.min(1, (span - tl + 1) / span));
+  }
 }
 
-function next() { i++; i < Q.length ? captcha() : result(); }
+function next() { clearInterval(tid); panicStop(); i++; i < Q.length ? captcha() : result(); }
 
 function finish(ok, msg) {
-  clearInterval(tid); clearTimeout(ft); lock(true);
+  clearInterval(tid); clearTimeout(ft); panicStop(); lock(true);
   if (ok) {
     score++;
     say(msg || pick(good));
-    setTimeout(next, 2200);
+    later(next, 2200);
   } else {
     bump(12);
     say((msg || pick(bad)) + ' Музиката спира само ако хванеш бягащия плейър и го натиснеш.');
@@ -465,7 +576,8 @@ function captcha() {
     });
   } else {
     const n = 2 + Math.floor(Math.random() * 5); // 2–6 сигнала
-    $('capQ').textContent = 'Чуй сигналите и избери колко пъти звъннаха. Роботите нямат уши!';
+    $('capQ').textContent = 'Чуй сигналите и избери колко пъти звъннаха. Роботите нямат уши! ⚠️ Слушай внимателно – при грешен отговор губиш 2 точки!';
+    say('Звукова проверка! Слушай внимателно, защото всяка грешка ти костува 2 точки. Не казвай, че не съм те предупредил.');
     const grid = document.createElement('div');
     grid.className = 'grid';
     for (let k = 1; k <= 6; k++) grid.append(btn(String(k), () => {
@@ -562,6 +674,7 @@ $('freeBtn').onclick = () => {
 
 // ---------- Край ----------
 function result() {
+  inQuiz = false; stopAll(); // НВО е свършило: никакви останали таймери, бягащ плейър или музика
   panel('result');
   $('score').textContent = `${score} / ${Q.length}`;
   const p = score / Q.length;

@@ -58,5 +58,22 @@ body.angry h1{animation:jit .35s infinite}
 @keyframes pulse{50%{transform:scale(1.04)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes eq{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}
+/* ---------- Panic-mode: последните 20% от времето ---------- */
+#panicFx{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;overflow:hidden;transition:opacity .5s;
+  background:radial-gradient(ellipse at center,transparent 30%,rgba(230,0,25,calc(.3 + .55*var(--pi,0))) 100%)}
+#panicFx::before{content:'';position:absolute;left:-10%;right:-10%;bottom:0;height:calc(6% + 30%*var(--pi,0));
+  border-radius:50% 50% 0 0 / 16px 16px 0 0;
+  background:linear-gradient(to top,rgba(230,0,25,.6),rgba(255,60,70,.18) 70%,transparent);
+  transition:height .9s ease-out;animation:redTide 2.4s ease-in-out infinite alternate}
+body.panic #panicFx{opacity:calc(.5 + .3*var(--pi,0))}
+body.panic #panicFx.beat{animation:panicBeat .5s ease-out}
+body.panic h1{color:var(--red);text-shadow:0 0 12px rgba(230,57,70,.7)}
+body.panic .panel{border-color:#b0001a}
+body.panic #card{animation:panicJit .14s linear infinite}
+body.panic #timer{display:inline-block;color:var(--red);font-weight:700;transform-origin:right center;animation:timerPulse .6s ease-in-out infinite}
+@keyframes panicBeat{from{opacity:1}}
+@keyframes redTide{from{transform:translateX(-3%) skewX(-2deg)}to{transform:translateX(3%) skewX(2deg)}}
+@keyframes panicJit{25%{transform:translate(calc(var(--pi,0)*-2px),calc(var(--pi,0)*1px))}75%{transform:translate(calc(var(--pi,0)*2px),calc(var(--pi,0)*-1px))}}
+@keyframes timerPulse{50%{transform:scale(1.25)}}
 @media(max-width:600px){body::before{left:12px}header,main,footer{padding-left:28px}h1{font-size:1.8rem}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
